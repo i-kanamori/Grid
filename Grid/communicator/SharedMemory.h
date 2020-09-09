@@ -96,6 +96,7 @@ public:
   static void OptimalCommunicator            (const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
   static void OptimalCommunicatorHypercube   (const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
   static void OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
+  static void OptimalCommunicatorNoShmDims(const Coordinate &processors,Grid_MPI_Comm & optimal_comm); // Do not use GetShmDims
   static void GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims);
   ///////////////////////////////////////////////////
   // Provide shared memory facilities off comm world
