@@ -33,6 +33,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <cuda_runtime_api.h>
 #endif
 
+#ifdef TOFU
+#ifndef COMMUNICATOR_NO_SHMDIMS
+#define COMMUNICATOR_NO_SHMDIMS
+#endif
+#endif
+
 NAMESPACE_BEGIN(Grid); 
 #define header "SharedMemoryMpi: "
 /*Construct from an MPI communicator*/
@@ -141,6 +147,11 @@ int Log2Size(int TwoToPower,int MAXLOG2)
 }
 void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
+
+#ifdef COMMUNICATOR_NO_SHMDIMS
+  OptimalCommunicatorNoShmDims(processors,optimal_comm);
+  return;
+#endif
   //////////////////////////////////////////////////////////////////////////////
   // Look and see if it looks like an HPE 8600 based on hostname conventions
   //////////////////////////////////////////////////////////////////////////////
@@ -190,6 +201,41 @@ void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmD
     }
     dim=(dim+1) %ndimension;
   }
+}
+void GlobalSharedMemory::OptimalCommunicatorNoShmDims(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+{
+  ////////////////////////////////////////////////////////////////
+  // Do not use subblock of ranks.
+  // It is user's repsonibility to call mpirun with a proper rankmap
+  // NodeCoord is identical
+  ////////////////////////////////////////////////////////////////
+  int ndimension              = processors.size();
+  Coordinate processor_coor(ndimension);
+  Coordinate WorldDims = processors;
+  Coordinate WorldCoor(ndimension);
+
+  ////////////////////////////////////////////////////////////////
+  // Check processor counts match
+  ////////////////////////////////////////////////////////////////
+  int Nprocessors=1;
+  for(int i=0;i<ndimension;i++){
+    Nprocessors*=processors[i];
+  }
+  assert(WorldSize==Nprocessors);
+
+  ////////////////////////////////////////////////////////////////
+  // Establish mapping between lexico physics coord and WorldRank
+  ////////////////////////////////////////////////////////////////
+  int rank;
+
+  Lexicographic::CoorFromIndexReversed(WorldCoor, WorldNode, WorldDims);
+  Lexicographic::IndexFromCoorReversed(WorldCoor,rank,WorldDims);
+
+  /////////////////////////////////////////////////////////////////
+  // Build the new communicator
+  /////////////////////////////////////////////////////////////////
+  int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
+  assert(ierr==0);
 }
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {

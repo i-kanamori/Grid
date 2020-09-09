@@ -251,6 +251,24 @@ void CartesianCommunicator::InitFromMPICommunicator(const Coordinate &processors
     MPI_Comm_dup(communicator,&communicator_halo[i]);
   }
   assert(Size==_Nprocessors);
+
+  fflush(stdout);
+  for(int i=0; i<Size; i++){
+    if(i==_processor){
+#pragma omp master
+      {
+	printf("hoge: I am %4d, processror cooridate = %2d %2d %2d %2d\n",
+	       _processor, _processor_coor[0], _processor_coor[1], _processor_coor[2], _processor_coor[3]);  
+	fflush(stdout);
+      }
+    }
+#pragma omp master
+    {
+      fflush(stdout);
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+  } // i
+#pragma omp barrier
 }
 
 CartesianCommunicator::~CartesianCommunicator()
